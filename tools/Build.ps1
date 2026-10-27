@@ -29,7 +29,7 @@ $compilerArgs = @(
     '-include', 'windhawk_api.h', '-Wall', '-Wextra',
     '-Wno-pragma-pack', '-Wno-pragma-system-header-outside-header',
     $source, $engineLibrary, '-Wl,--export-all-symbols',
-    '-lole32', '-loleaut32', '-lruntimeobject', '-lcomctl32', '-lversion', '-ladvapi32',
+    '-lole32', '-loleaut32', '-lruntimeobject', '-lversion', '-ladvapi32',
     '-o', (Join-Path $buildDir $outputName)
 )
 & $compiler @compilerArgs

@@ -1,104 +1,94 @@
 # Nested Tray Drawer
 
-An experimental [Windhawk](https://windhawk.net/) mod that adds a second drawer
-inside Windows' hidden notification-icons panel. Drag rarely used icons onto
-the added chevron to collect them, while keeping your everyday icons nearby.
+Add a second drawer to Windows 11's hidden notification-icons panel. Drag an
+icon onto the added chevron to collect it, then click the chevron to open the
+second drawer. Both drawers can remain visible together. Icons retain their
+native templates, input handlers and app context menus. The footer is 40 DIP high.
 
 ![Nested Tray Drawer feature overview](https://raw.githubusercontent.com/Meidios/nested-tray-drawer/0d4ae2b9b09aba9a907541d0855e86a55a51e711/assets/feature-overview-0edbded10469.png)
 
-*Concept illustration; panel styling and example icons are illustrative.*
+*Concept illustration; example icons and panel styling are illustrative.*
 
-**Version 0.1.9 is experimental and is not in the official Windhawk catalog.**
-Support is restricted to the inspected configuration below.
+## Experimental compatibility
 
-Official-catalog submission: [windhawk-mods #6645](https://github.com/ramensoftware/windhawk-mods/pull/6645).
+Validated on Windows 11 23H2 build 22631.5126 x64 with Windhawk 1.7.3,
+Taskbar.View.dll 2125.4507.10.0 and taskbar.dll from that installation.
+Windows 10, ARM64, other Windows builds, DPI/monitor combinations and interactions
+with other tray mods have not been validated.
 
-## Features
+The mod discovers SystemTray.dll, older Taskbar.View.dll or ExplorerExtensions.dll
+and resolves the required internal interfaces and methods from symbols. It no
+longer requires a particular DLL version, timestamp, image size or vtable address.
+This does not make every Windows build supported: the symbol names, root layout
+and native identity ABI must still be compatible.
 
-- Collect multiple icons by dragging them from the first drawer onto the added
-  chevron. Earlier collected icons stay collected.
-- Open both drawers together and retain original app icons, native input
-  handlers and recognized native context menus.
-- Save collection membership automatically. Reloading the mod retains it;
-  temporarily absent icons are collected again when they return.
-- Share the same per-user record between local and catalog installation IDs,
-  with one-time migration from this mod's older storage.
-- Use a compact 40 DIP footer with a subtle divider and an inset rounded button.
+Persistent identity currently requires a recognized x64 Identity() accessor,
+QueryInterface adjustment and native identity copy ABI in taskbar.dll. Their
+instruction forms are checked before deriving any object position. Unknown forms
+are rejected; this is intentionally an amd64 release. It does not claim ARM64
+support. Never bypass these checks to force compatibility.
 
-## Supported configuration
+## Use
 
-| Component | Inspected configuration |
-| --- | --- |
-| Windows | Windows 11 23H2, build 22631.5126, x64 |
-| Windhawk | 1.7.3 |
-| Taskbar.View.dll | 2125.4507.10.0 |
-| taskbar.dll | PE timestamp `10195DD3`, image size `3B6000`, inspected identity interface |
+1. Open the normal taskbar hidden-icons drawer.
+2. Drag an icon onto the added chevron and release it. Repeat to collect more.
+3. Click the added chevron to open or close the second drawer. Both drawers can
+   remain open; an empty second drawer does not open.
+4. Right-click the chevron and choose **Restore all collected icons** to return
+   every collected icon and explicitly clear saved membership.
 
-Other builds, including other 23H2 updates, are not claimed as supported.
-Windows 10, ARM64, 24H2 and 25H2 are unvalidated. Native version and identity
-guards are intentional; do not remove them to force support on another build.
+There is no right-click icon picker or individual drag-out command. Disabling
+the mod restores the native tray and preserves the saved collection.
 
-## Install and use
+## Saved collection and migration
 
-1. Open [nested-tray-drawer.wh.cpp](nested-tray-drawer.wh.cpp) and copy its contents.
-2. In Windhawk, choose **Create a New Mod**, replace the starter source with
-   this file, then compile and enable it. Disable an existing copy first.
-3. Open Windows' normal hidden-icons drawer. Drag an icon onto the added
-   chevron and release it. Repeat to collect more icons.
-4. Click the added chevron to open or close the second drawer. An empty second
-   drawer does not open.
-5. To return all collected icons, right-click the added chevron and choose
-   **Restore all collected icons**. This explicitly clears saved membership.
+Records use Windhawk's public storage API, with a Windows-user SID suffix to
+separate users in installed Windhawk. Membership uses an app GUID, or the owning
+process's exact executable path and native UID. Missing apps keep their records;
+ambiguous or inaccessible identities remain visible. Changed app identifiers can
+require recollection. Records contain app identifiers/encoded paths, not secrets;
+the encoding is not encryption. No records are transmitted.
 
-There is no right-click icon picker or supported individual drag-out gesture.
-Disabling the mod restores Windows' normal tray presentation and keeps records.
-The detailed README embedded in the source is the authoritative support statement.
+The first load imports a valid 0.1.8/0.1.9 HKCU collection from this mod's own
+legacy key. Existing Windhawk records always win, including an explicitly cleared
+collection. The catalog build reads that legacy key only for first-time import
+and never writes it or accesses another mod's internal Windhawk storage.
 
-## Saved records and switching copies
+To switch from a development/local copy, disable that copy first. Version 0.1.10
+local builds export their current valid collection as a one-way handoff when
+disabled; the catalog build imports it on first use. Confirm restoration before
+removing the old copy. Local and catalog API stores do not stay in two-way sync;
+switching back uses that copy's own saved state. Do not enable both copies.
 
-Version 0.1.8 and later use
-`HKEY_CURRENT_USER\Software\Meidios\Windhawk\NestedTrayDrawer`, value
-`CollectedIconsV1`, independently of Windhawk's `local@` prefix.
+An invalid record is kept intact and icons remain visible. The chevron's context
+menu offers **Reset saved collection** for explicit recovery; a readable invalid
+API record is backed up before resetting. Uninstalling removes Windhawk-owned
+storage. The old HKCU migration backup is retained and never automatically erased.
 
-Update an older local copy to 0.1.8 or later before switching installation
-source. Disable it before enabling another copy; confirm restoration before
-uninstalling the disabled copy. A future catalog copy will use the same record.
-Portable users must update their local copy first. Versions without saved
-records, 0.1.6 and earlier, cannot be recovered by stored-record migration.
+## Known limits
 
-An existing destination record always wins, including an explicitly cleared
-collection. Old backups are preserved and are not synchronized. Missing apps
-retain membership. Apps that change their GUID, executable path or UID may
-require collection again; ambiguous identities remain visible.
+- Custom app menus that do not expose foreground native menu state can dismiss
+  both drawers after the bounded menu-start grace period.
+- Complete Explorer restart, full mouse/keyboard and drag-cancel coverage,
+  light/high-contrast appearance and live theme switching remain untested.
+- Symbol discovery across module families is implemented; runtime compatibility
+  on 24H2/25H2 is not established by the local build tests.
 
-Records contain app identifiers or encoded paths and UIDs. Encoding is not
-encryption. The mod does not transmit records. Uninstalling leaves the shared
-record in place; use the restore-all command first if you want to clear it.
+## Credits
 
-## Known limitations
-
-- Some custom or non-foreground app menus are not recognized and may dismiss
-  both drawers. Native menu retention is not universal.
-- Mod reload and icon disappearance/reappearance restoration were verified.
-  A full desktop Explorer restart remains untested.
-- Full left-click/double-click/keyboard, drag-cancel, multi-monitor, DPI and
-  coexistence testing with other taskbar mods is incomplete.
-- The compact footer was accepted in the inspected dark-theme configuration.
-  Light/high-contrast appearance and live theme switching remain untested.
-  Reopen the drawer after changing high-contrast settings to refresh its colors.
-
-## Development and validation
-
-See [development instructions](docs/DEVELOPMENT.md) for local builds and tests,
-and [review notes](docs/REVIEW.md) for checked behavior and remaining coverage.
-No compiled DLLs, user records or desktop logs are distributed in this repository.
-
-For issues, provide Windows build, both taskbar module versions, Windhawk version
-and reproduction steps. Remove private app paths and identifiers from logs.
-
-## License and credits
-
-Code is licensed under [GPL-3.0](LICENSE). Native overflow access is adapted
-from m417z's GPLv3
+Native overflow access is adapted from m417z's GPLv3
 [Taskbar notification icon spacing](https://github.com/ramensoftware/windhawk-mods/blob/main/mods/taskbar-notification-icon-spacing.wh.cpp).
-Authored by [MEI / Meidios](https://github.com/Meidios), with ChatGPT/Codex assistance.
+Symbol-based interface resolution and vtable verification follow Ris Peng's GPLv3
+[System Tray Folders](https://github.com/ramensoftware/windhawk-mods/blob/main/mods/system-tray-folders.wh.cpp).
+Nested Tray Drawer keeps a separate simultaneous flyout and drag-based membership;
+it does not replace the first drawer with an in-grid folder view.
+The single-file mod retains its GPL-3.0 declaration.
+
+## Source and review
+
+Version 0.1.10 is experimental and is not yet in the official catalog.
+Official submission: [windhawk-mods #6645](https://github.com/ramensoftware/windhawk-mods/pull/6645).
+To try the local source, create a new mod in Windhawk and replace the starter
+with [nested-tray-drawer.wh.cpp](nested-tray-drawer.wh.cpp), then compile it.
+Development commands and evidence boundaries are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
+and [docs/REVIEW.md](docs/REVIEW.md).

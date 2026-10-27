@@ -1,56 +1,80 @@
 # Review and verification
 
-Reviewed on 2026-10-27 for experimental version 0.1.9. This is a local source
-review and verification record, not official Windhawk approval or a zero-defect
-guarantee. The support matrix in the README remains intentionally narrow.
+Experimental version 0.1.10, reviewed on 2026-10-27. This is development evidence,
+not official Windhawk approval. The submission is
+[windhawk-mods #6645](https://github.com/ramensoftware/windhawk-mods/pull/6645).
 
-## Findings addressed
+## First AI review: changes and boundaries
 
-- Removed the background HighContrastChanged subscription so an in-flight
-  off-thread delegate cannot outlive mod unload. Color refresh now uses existing
-  UI-thread drawer-load/theme handlers; their exceptions are contained.
-- Moved owning-thread checks ahead of drawer-state reads in native hook entry
-  points, keeping non-UI hook calls away from UI-owned state.
+- Removed permanent DLL pinning. Synchronized initial UI publication with unload,
+  tracked active UI callbacks, and moved teardown to posted owner-thread work.
+  Event revocation precedes independently guarded native restoration and visual
+  removal. Menu command callbacks are revoked explicitly. Cross-thread cleanup
+  reads atomic state rather than the UI-owned unique pointer.
+- Reused the tray-spacing module-discovery approach and System Tray Folders'
+  symbol-resolved interface/vtable verification, retaining GPL attribution.
+  Removed exact DLL versions, PE timestamp/size, fixed internal IIDs, vtable RVA
+  and private +64/+152 field reads.
+- Persistent identity still depends on a verified x64 native ABI. Public UDK
+  icon interfaces expose presentation/input but no persistent identifier. The
+  Identity() return type contains an MSVC-owned string and cannot be called as
+  a MinGW struct. Its symbol-resolved accessor, interface adjustment and identity
+  copy ABI are recognized before positions are derived. Unknown instruction
+  forms are rejected. This is not universal Windows support or ARM64 support.
+- Replaced the canonical custom registry store with Windhawk's public storage
+  API and per-user SID names. No Windhawk private HKLM namespace is read by the
+  mod. A read-only first-use import of this mod's own legacy HKCU record remains
+  necessary for existing users. Local builds export a one-way handoff on disable;
+  catalog builds never write that key. Explicit-empty destinations win, and
+  invalid records are preserved with an explicit reset path.
+- Retained simultaneous drawers, native icon views, the 40-DIP footer, direct
+  drag collection, existing record keys and the original menu-hold policy.
+  Kept instance/concurrency guards because public storage does not itself prevent
+  duplicate XAML attachment or serialize a multi-process read/modify/write.
 
-The accepted footer dimensions, native icon templates, saved-record format,
-matching, partitioning and drop/menu policies were retained.
+## Checks completed
 
-## Checks performed
+- Both local-ID and catalog-ID C++ builds; callback/context exports; all required
+  symbols against the matching local PDB dumps.
+- Actual cleanup helper: exceptions injected at each of twelve restoration
+  positions do not skip subsequent cleanup operations. This is a helper-level
+  test, not proof of every possible disconnected-XAML failure.
+- Actual accessor against the local DLL mapped as data; eight mutated instruction
+  or return-ABI cases are rejected. No inspected system DLL is executed by this
+  offline test.
+- Actual record, partition, drop and menu policy regression checks.
+- Actual storage code with simulated API namespaces and isolated registry
+  fixtures: first import, local/catalog handoff, reload precedence, explicit
+  clear, user-key separation, corrupt-data recovery and failed writes.
+- Initial 0.1.10 installation into the same four Explorer processes: all sixteen
+  real records migrated to Windhawk storage and compared byte-for-byte with the
+  pre-update value. Native identity and overflow symbols resolved successfully.
 
-- Local-ID and catalog-ID C++ builds, five lifecycle callback exports, engine
-  context export and nine native hook symbols against the matching local PDB.
-- Record round trips, Unicode, bounds, malformed/duplicate keys and membership
-  matching, including absent/reappearing identities.
-- Cross-process local/catalog migration, destination precedence, explicit-empty
-  tombstones, stale-backup prevention, corruption handling and instance guards
-  in isolated registry fixtures.
-- Repeated icon additions, partition bounds, owned drop sources, pointer and
-  geometry boundaries, and scoped menu-hold lifetime/owner changes.
-- Official validation functions executed locally with one expected `amd64`
-  manual-review warning and no unexpected warnings.
+The final build also completed a disable/replacement/re-enable cycle: the old
+DLL unloaded, the final source hash matched the installed source, and all sixteen
+records and the local-to-catalog handoff matched exactly. The same four Explorer
+processes loaded the new DLL. No Explorer restart was performed.
 
-For the initial official submission commit `0c16f58e`,
-[PR #6645](https://github.com/ramensoftware/windhawk-mods/pull/6645) passed the
-Windhawk 1.6.1, 1.7.3 and 2.0.0-alpha.7 build jobs. The source-validation job
-fails on the same `amd64` manual-confirmation warning; this remains unresolved
-by a human reviewer. The author requested the official AI review. These build
-results do not broaden the inspected runtime support matrix.
+The user confirmed that the saved icons restored automatically, both drawers
+remain visible together, and the inner icons' app context menus work. Runtime
+logs independently show real 40x40 native icon views with matching models and
+the outer window visible, plus recognized native menu hold and release.
+Local official validation has one expected amd64 manual-confirmation warning and
+zero unexpected warnings.
 
-Earlier live verification on the inspected configuration covered native icons,
-multiple collection, drag-to-collect, simultaneous drawers, recognized app menus,
-mod reload restoration, icon disappearance/reappearance and compact dark-theme
-footer appearance. Native cleanup and restoration were observed during reloads.
-The review's lifecycle-only changes do not add new compatibility coverage.
+## Remaining coverage and review
 
-## Remaining coverage
+Only Windows 11 23H2 22631.5126 x64 / Windhawk 1.7.3 has runtime evidence.
+24H2/25H2, ARM64, full input/drag-cancel, DPI/multiple-monitor and light/high-contrast
+coverage remain unverified. Some custom menus do not expose recognized foreground
+menu state. The unchanged amd64 warning requires a human decision; it is not
+resolved by switching architecture metadata.
 
-A complete desktop Explorer restart, full keyboard/activation/drag-cancel
-matrix, DPI/monitor variants, light/high-contrast appearance, live theme switching,
-portable legacy import and universal custom-menu support remain unverified.
-Other Windows builds require their own native-layout inspection and runtime evidence.
+The first submission head 0c16f58e passed the 1.6.1, 1.7.3 and 2.0.0-alpha.7 build
+jobs. The updated head must run its own CI and AI review before human review.
 
-## Publication contents
+## Publication boundary
 
-Only source, GPL license, documentation and build/policy-test scripts are
-included. Production registry values, icon identifiers, local application paths,
-DLLs, PDB dumps, desktop screenshots and debug logs are excluded.
+Publish only the maintained source, license, documentation and build/test scripts.
+Do not include build outputs, production storage values, icon identities, app
+paths, private backups, PDB dumps, screenshots or raw runtime logs.

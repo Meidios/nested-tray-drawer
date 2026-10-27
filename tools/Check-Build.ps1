@@ -44,9 +44,13 @@ if ($exports -notcontains 'InternalWhModPtr') { throw 'The engine mod-context ex
 $symbolsPath = Join-Path $projectRoot 'research\taskbar-view-symbols.txt'
 if (Test-Path -LiteralPath $symbolsPath) {
     $symbols = (Get-Content -LiteralPath $symbolsPath -Raw) -replace ' __ptr64',''
+    $identitySymbols = Join-Path $projectRoot 'research/taskbar-symbols.txt'
+    if (Test-Path -LiteralPath $identitySymbols) {
+        $symbols += (Get-Content -LiteralPath $identitySymbols -Raw) -replace ' __ptr64',''
+    }
     $source = Get-Content -LiteralPath $SourcePath -Raw
-    foreach ($hook in [regex]::Matches($source, 'LR"\(([^\r\n]+)\)"')) {
-        if (-not $symbols.Contains($hook.Groups[1].Value)) { throw "Native hook not in matching PDB: $($hook.Groups[1].Value)" }
+    foreach ($hook in [regex]::Matches($source, 'LR"\(((?:public:|private:|protected:|struct guid::|const winrt::)[^\r\n]+)\)"')) {
+        if (-not $symbols.Contains($hook.Groups[1].Value.TrimEnd())) { throw "Native hook not in matching PDB: $($hook.Groups[1].Value)" }
         "Verified native hook: $($hook.Groups[1].Value)"
     }
 }

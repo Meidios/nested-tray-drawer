@@ -23,8 +23,9 @@ Run from the repository root:
 ```
 
 The variants compile with `local@nested-tray-drawer` and `nested-tray-drawer`
-respectively. Artifacts go to the ignored `build/` directory. Both variants share
-the per-user collection store. Do not load both simultaneously.
+respectively. Artifacts go to the ignored `build/` directory. Each ID has its own
+Windhawk API store, keyed by Windows-user SID. Local builds export a one-way
+handoff on disable for first-time catalog import. Do not load both simultaneously.
 
 `Check-Build.ps1` verifies AMD64 callback/context exports. Native hook checks
 also run if a matching `research/taskbar-view-symbols.txt` PDB dump is supplied.
@@ -41,20 +42,27 @@ After building, run:
 .\tools\Test-TrayPartition.ps1
 .\tools\Test-ChevronDrop.ps1
 .\tools\Test-MenuHold.ps1
+.\tools\Test-Cleanup.ps1
+.\tools\Test-IdentityAccessor.ps1
 ```
 
 These extract the actual policy/storage blocks from the maintained source.
 Migration tests use isolated, unique registry fixtures under
 `Software\Meidios\Windhawk\NestedTrayDrawer.Tests` and remove only their own
-fixture. They do not clear or rewrite the production collection store.
+fixture. They do not clear or rewrite the production collection store. The API
+storage test uses simulated Windhawk API namespaces to exercise actual storage
+code. The accessor test requires matching local taskbar PDB text in `research/`
+and reads the corresponding DLL only as data. It does not execute that DLL.
 
 ## Lifecycle constraints
 
 All drawer models and XAML controls belong to Explorer's captured UI thread.
 Normal unload removes handlers, restores native item binding and removes owned
-controls before the DLL is unloaded. A failed cleanup retains inert code and its
-instance guard until Explorer exits. Do not replace UI-thread cleanup with a
-global XAML destructor.
+controls before the DLL is unloaded. First attachment and unload are synchronized;
+posted cleanup waits for active UI callbacks to leave, revokes event handlers,
+and attempts each native restore operation independently. The private endpoint's
+destruction also cleans the drawer. There is no permanent DLL pin. Do not replace
+UI-thread cleanup with a global XAML destructor.
 
 Only the existing UI-thread Loaded/ActualThemeChanged handlers refresh footer
 colors. No background AccessibilitySettings event delegate is registered.

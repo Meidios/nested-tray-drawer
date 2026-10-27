@@ -82,7 +82,9 @@ processes. Independent public-API transfers immediately before and after the
 update matched all sixteen records exactly. Both temporary test copies were
 cleared and the final local configuration restored. The old DLL unloaded; the
 installed source hash matched the maintained source. This does not substitute
-for a complete Explorer restart test.
+for a complete Explorer restart test. The user then confirmed on 0.1.11 that
+saved icons restored automatically, both drawers remain visible together, and
+the inner icons' app context menus still work.
 
 ## Remaining coverage and review
 

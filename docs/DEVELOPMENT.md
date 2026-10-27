@@ -66,4 +66,5 @@ Hook entry points verify thread ownership before reading drawer state.
 Document the exact inspected build, native symbols/layout evidence and real UI
 results for compatibility changes. Preserve storage destination precedence and
 explicit-empty tombstones. Never include personal collection records, app paths
-or raw desktop logs in a change. No official-catalog PR has been submitted.
+or raw desktop logs in a change. The official-catalog submission is tracked in
+[windhawk-mods #6645](https://github.com/ramensoftware/windhawk-mods/pull/6645).

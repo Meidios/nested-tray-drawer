@@ -11,6 +11,8 @@ the added chevron to collect them, while keeping your everyday icons nearby.
 **Version 0.1.9 is experimental and is not in the official Windhawk catalog.**
 Support is restricted to the inspected configuration below.
 
+Official-catalog submission: [windhawk-mods #6645](https://github.com/ramensoftware/windhawk-mods/pull/6645).
+
 ## Features
 
 - Collect multiple icons by dragging them from the first drawer onto the added

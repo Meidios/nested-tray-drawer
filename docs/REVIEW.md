@@ -27,8 +27,14 @@ matching, partitioning and drop/menu policies were retained.
 - Repeated icon additions, partition bounds, owned drop sources, pointer and
   geometry boundaries, and scoped menu-hold lifetime/owner changes.
 - Official validation functions executed locally with one expected `amd64`
-  manual-review warning and no unexpected warnings. GitHub CI and official
-  review have not been claimed.
+  manual-review warning and no unexpected warnings.
+
+For the initial official submission commit `0c16f58e`,
+[PR #6645](https://github.com/ramensoftware/windhawk-mods/pull/6645) passed the
+Windhawk 1.6.1, 1.7.3 and 2.0.0-alpha.7 build jobs. The source-validation job
+fails on the same `amd64` manual-confirmation warning; this remains unresolved
+by a human reviewer. The author requested the official AI review. These build
+results do not broaden the inspected runtime support matrix.
 
 Earlier live verification on the inspected configuration covered native icons,
 multiple collection, drag-to-collect, simultaneous drawers, recognized app menus,

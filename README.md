@@ -40,7 +40,7 @@ support. Never bypass these checks to force compatibility.
 There is no right-click icon picker or individual drag-out command. Disabling
 the mod restores the native tray and preserves the saved collection.
 
-## Saved collection and migration
+## Saved collection
 
 Records use Windhawk's public storage API, with a Windows-user SID suffix to
 separate users in installed Windhawk. Membership uses an app GUID, or the owning
@@ -49,21 +49,10 @@ ambiguous or inaccessible identities remain visible. Changed app identifiers can
 require recollection. Records contain app identifiers/encoded paths, not secrets;
 the encoding is not encryption. No records are transmitted.
 
-The first load imports a valid 0.1.8/0.1.9 HKCU collection from this mod's own
-legacy key. Existing Windhawk records always win, including an explicitly cleared
-collection. The catalog build reads that legacy key only for first-time import
-and never writes it or accesses another mod's internal Windhawk storage.
-
-To switch from a development/local copy, disable that copy first. Version 0.1.10
-local builds export their current valid collection as a one-way handoff when
-disabled; the catalog build imports it on first use. Confirm restoration before
-removing the old copy. Local and catalog API stores do not stay in two-way sync;
-switching back uses that copy's own saved state. Do not enable both copies.
-
 An invalid record is kept intact and icons remain visible. The chevron's context
 menu offers **Reset saved collection** for explicit recovery; a readable invalid
 API record is backed up before resetting. Uninstalling removes Windhawk-owned
-storage. The old HKCU migration backup is retained and never automatically erased.
+storage. Updates and Explorer restarts preserve the collection within the same mod ID.
 
 ## Known limits
 
@@ -84,9 +73,17 @@ Nested Tray Drawer keeps a separate simultaneous flyout and drag-based membershi
 it does not replace the first drawer with an in-grid folder view.
 The single-file mod retains its GPL-3.0 declaration.
 
+## Development-to-catalog switch
+
+The official mod contains no development import/export code. A separate
+[one-time transfer tool](docs/COLLECTION-TRANSFER.md) preserves a local copy's
+collection through each ID's public API. It verifies exact readback, refuses
+conflicting destination data, and restores the local configuration on failure.
+Normal same-ID updates retain records without this tool.
+
 ## Source and review
 
-Version 0.1.10 is experimental and is not yet in the official catalog.
+Version 0.1.11 is experimental and is not yet in the official catalog.
 Official submission: [windhawk-mods #6645](https://github.com/ramensoftware/windhawk-mods/pull/6645).
 To try the local source, create a new mod in Windhawk and replace the starter
 with [nested-tray-drawer.wh.cpp](nested-tray-drawer.wh.cpp), then compile it.

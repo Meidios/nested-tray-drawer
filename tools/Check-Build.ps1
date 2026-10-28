@@ -1,11 +1,14 @@
-param([string]$DllPath = '', [string]$SourcePath = '')
+param([string]$DllPath = '', [string]$SourcePath = '',
+      [ValidateSet('amd64','arm64')][string]$Architecture = 'amd64',
+      [string[]]$SymbolPaths = @())
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 function Get-PeExports([string]$ImagePath) {
     $imageBytes = [IO.File]::ReadAllBytes($ImagePath)
     $peOffset = [BitConverter]::ToInt32($imageBytes, 0x3c)
     $machine = [BitConverter]::ToUInt16($imageBytes, $peOffset + 4)
-    if ($machine -ne 0x8664) { throw "Expected an AMD64 image: $ImagePath" }
+    $expectedMachine = if ($Architecture -eq 'arm64') { 0xaa64 } else { 0x8664 }
+    if ($machine -ne $expectedMachine) { throw "Expected a $Architecture image: $ImagePath" }
     $sectionCount = [BitConverter]::ToUInt16($imageBytes, $peOffset + 6)
     $optionalSize = [BitConverter]::ToUInt16($imageBytes, $peOffset + 20)
     $optionalOffset = $peOffset + 24
@@ -35,19 +38,19 @@ if (-not $DllPath) { $DllPath = Join-Path $projectRoot 'build\nested-tray-drawer
 if (-not $SourcePath) { $SourcePath = Join-Path $projectRoot 'nested-tray-drawer.wh.cpp' }
 $dllPath = $DllPath
 $exports = @(Get-PeExports $dllPath)
-foreach ($callback in @('Wh_ModInit','Wh_ModAfterInit','Wh_ModBeforeUninit','Wh_ModUninit','Wh_ModSettingsChanged')) {
+foreach ($callback in @('Wh_ModInit','Wh_ModAfterInit','Wh_ModBeforeUninit','Wh_ModUninit')) {
     $matchingExports = @($exports | Where-Object { $_ -match ('^_Z\d+' + [regex]::Escape($callback) + 'v$') })
     if ($matchingExports.Count -ne 1) { throw "Missing or ambiguous C++ callback export: $callback" }
     "Verified callback export: $($matchingExports[0])"
 }
 if ($exports -notcontains 'InternalWhModPtr') { throw 'The engine mod-context export is missing.' }
-$symbolsPath = Join-Path $projectRoot 'research\taskbar-view-symbols.txt'
-if (Test-Path -LiteralPath $symbolsPath) {
-    $symbols = (Get-Content -LiteralPath $symbolsPath -Raw) -replace ' __ptr64',''
-    $identitySymbols = Join-Path $projectRoot 'research/taskbar-symbols.txt'
-    if (Test-Path -LiteralPath $identitySymbols) {
-        $symbols += (Get-Content -LiteralPath $identitySymbols -Raw) -replace ' __ptr64',''
-    }
+if ($exports | Where-Object { $_ -match '^_Z\d+Wh_ModSettingsChanged' }) { throw 'The removed settings callback is still exported.' }
+if (-not $SymbolPaths -and $Architecture -eq 'amd64') {
+    $SymbolPaths = @('research/taskbar-view-symbols.txt','research/taskbar-symbols.txt') |
+        ForEach-Object { Join-Path $projectRoot $_ } | Where-Object { Test-Path -LiteralPath $_ }
+}
+if ($SymbolPaths) {
+    $symbols = ($SymbolPaths | ForEach-Object { (Get-Content -LiteralPath $_ -Raw) -replace ' __ptr64','' }) -join "`n"
     $source = Get-Content -LiteralPath $SourcePath -Raw
     foreach ($hook in [regex]::Matches($source, 'LR"\(((?:public:|private:|protected:|struct guid::|const winrt::)[^\r\n]+)\)"')) {
         if (-not $symbols.Contains($hook.Groups[1].Value.TrimEnd())) { throw "Native hook not in matching PDB: $($hook.Groups[1].Value)" }

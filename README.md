@@ -11,10 +11,13 @@ native templates, input handlers and app context menus. The footer is 40 DIP hig
 
 ## Experimental compatibility
 
-Validated on Windows 11 23H2 build 22631.5126 x64 with Windhawk 1.7.3,
+Runtime validated on Windows 11 23H2 build 22631.5126 x64 with Windhawk 1.7.3,
 Taskbar.View.dll 2125.4507.10.0 and taskbar.dll from that installation.
-Windows 10, ARM64, other Windows builds, DPI/monitor combinations and interactions
-with other tray mods have not been validated.
+ARM64 builds and offline identity/symbol checks are also provided, using
+ARM64 taskbar.dll 10.0.26100.9549, SystemTray.dll 2608.26001.100.0 and
+Taskbar.View.dll 2125.26100.0.0. ARM64 UI behavior has not been tested on a
+physical device and remains experimental. Windows 10, other Windows builds,
+DPI/monitor combinations and interactions with other tray mods are unverified.
 
 The mod discovers SystemTray.dll, older Taskbar.View.dll or ExplorerExtensions.dll
 and resolves the required internal interfaces and methods from symbols. It no
@@ -22,11 +25,13 @@ longer requires a particular DLL version, timestamp, image size or vtable addres
 This does not make every Windows build supported: the symbol names, root layout
 and native identity ABI must still be compatible.
 
-Persistent identity currently requires a recognized x64 Identity() accessor,
-QueryInterface adjustment and native identity copy ABI in taskbar.dll. Their
-instruction forms are checked before deriving any object position. Unknown forms
-are rejected; this is intentionally an amd64 release. It does not claim ARM64
-support. Never bypass these checks to force compatibility.
+Persistent identity uses Wh_Disasm to follow a recognized interface-adjustment
+thunk and the HWND/UID/GUID copy on x64 or ARM64. Both constructor-based and
+inlined identity getters are recognized; the native owning-string return type
+is never called across C++ ABIs. Unrecognized symbols, instructions, field layouts
+or call targets are rejected rather than guessed. Some older ARM64 binaries
+(such as the inspected taskbar.dll 10.0.22621.3810) lack the required Identity()
+symbol. Do not bypass these checks to force compatibility.
 
 ## Use
 
@@ -38,7 +43,8 @@ support. Never bypass these checks to force compatibility.
    every collected icon and explicitly clear saved membership.
 
 There is no right-click icon picker or individual drag-out command. Disabling
-the mod restores the native tray and preserves the saved collection.
+the mod using Windhawk's own toggle restores the native tray and preserves
+the saved collection. There is no second enable setting.
 
 ## Saved collection
 
@@ -69,6 +75,8 @@ Native overflow access is adapted from m417z's GPLv3
 [Taskbar notification icon spacing](https://github.com/ramensoftware/windhawk-mods/blob/main/mods/taskbar-notification-icon-spacing.wh.cpp).
 Symbol-based interface resolution and vtable verification follow Ris Peng's GPLv3
 [System Tray Folders](https://github.com/ramensoftware/windhawk-mods/blob/main/mods/system-tray-folders.wh.cpp).
+The Wh_Disasm instruction-scanning approach follows m417z's GPLv3
+[Taskbar height and icon size](https://github.com/ramensoftware/windhawk-mods/blob/main/mods/taskbar-icon-size.wh.cpp).
 Nested Tray Drawer keeps a separate simultaneous flyout and drag-based membership;
 it does not replace the first drawer with an in-grid folder view.
 The single-file mod retains its GPL-3.0 declaration.
@@ -83,7 +91,7 @@ Normal same-ID updates retain records without this tool.
 
 ## Source and review
 
-Version 0.1.11 is experimental and is not yet in the official catalog.
+Version 0.1.12 is experimental and is not yet in the official catalog.
 Official submission: [windhawk-mods #6645](https://github.com/ramensoftware/windhawk-mods/pull/6645).
 To try the local source, create a new mod in Windhawk and replace the starter
 with [nested-tray-drawer.wh.cpp](nested-tray-drawer.wh.cpp), then compile it.

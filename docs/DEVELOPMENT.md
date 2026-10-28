@@ -1,7 +1,7 @@
 # Development
 
 The maintained mod is the single file `nested-tray-drawer.wh.cpp`. Its metadata,
-settings and embedded README can be used directly in Windhawk. Support guards
+architecture metadata and embedded README can be used directly in Windhawk. Support guards
 must remain in place until another configuration is independently inspected.
 
 ## Toolchain
@@ -20,6 +20,9 @@ Run from the repository root:
 .\tools\Check-Build.ps1
 .\tools\Build.ps1 -Variant Catalog
 .\tools\Check-Build.ps1 -DllPath build\nested-tray-drawer-catalog.dll
+.\tools\Build.ps1 -Variant Local -Architecture arm64
+.\tools\Build.ps1 -Variant Catalog -Architecture arm64
+.\tools\Check-Build.ps1 -Architecture arm64 -DllPath build\nested-tray-drawer-catalog-arm64.dll
 ```
 
 The variants compile with `local@nested-tray-drawer` and `nested-tray-drawer`
@@ -29,8 +32,9 @@ registry migration or local-build export logic. Use the separate
 [one-time transfer tool](COLLECTION-TRANSFER.md) immediately before a local-to-catalog
 switch. Do not load both simultaneously.
 
-`Check-Build.ps1` verifies AMD64 callback/context exports. Native hook checks
-also run if a matching `research/taskbar-view-symbols.txt` PDB dump is supplied.
+`Check-Build.ps1` verifies the selected PE machine and four lifecycle/context
+exports, and rejects the removed settings callback. Native hook checks use
+matching x64 research dumps by default, or explicit `-SymbolPaths` for ARM64.
 That research dump is not included here. A successful build alone does not validate
 the native ABI or make another Windows build supported.
 
@@ -55,8 +59,11 @@ The API storage test uses simulated namespaces to exercise the actual storage
 code. The transfer test uses synthetic records and actual Windows DPAPI encryption;
 it refuses existing empty/conflicting/corrupt destination values, checks exact
 readback and failed writes, and never touches the production collection. DPAPI
-tests need an ordinary user context outside a restricted registry/crypto sandbox. The accessor test requires matching local taskbar PDB text in `research/`
-and reads the corresponding DLL only as data. It does not execute that DLL.
+tests need an ordinary user context outside a restricted registry/crypto sandbox.
+The accessor test extracts the actual decoder and covers both architectures,
+inlined/constructor getter forms, register and displacement variations, malformed
+fields, clobbers, conditional adjustments and disassembler failures. These are
+semantic fixtures; real-binary evidence is detailed in [ARM64.md](ARM64.md).
 
 ## Lifecycle constraints
 

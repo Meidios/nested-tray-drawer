@@ -1,10 +1,32 @@
 # Review and verification
 
-Experimental version 0.1.11, reviewed on 2026-10-27. This is development evidence,
+Experimental version 0.1.12, reviewed on 2026-10-27. This is development evidence,
 not official Windhawk approval. The submission is
 [windhawk-mods #6645](https://github.com/ramensoftware/windhawk-mods/pull/6645).
 
-## First AI review: changes and boundaries
+## Maintainer feedback and 0.1.12
+
+- Removed the duplicate enabled setting, its atomic state, every conditional and
+  Wh_ModSettingsChanged. Windhawk's own toggle controls the mod and the existing
+  unload path restores the tray.
+- Replaced x64 byte signatures with bounded Wh_Disasm semantic decoding, following
+  the existing taskbar-icon-size instruction-scanning approach. Both x64 and
+  ARM64 validate the interface adjustment and the HWND/UID/GUID prefix, including
+  inlined ARM64 getters. No native owning-string result crosses a C++ ABI.
+- Four local/catalog x64/ARM64 builds passed; PE machine, four lifecycle exports
+  and every required native symbol were checked. The semantic tests cover both
+  architectures and reject incorrect fields, call targets, pointer truncation,
+  clobbers, malformed numbers, lengths and bounded-scan failures.
+- Real ARM64 images and matching public PDBs were inspected without executing the
+  images. The actual ARM64 getter decodes correctly with Windhawk's formatter.
+  A separate owned test process exercised the real x64 Wh_Disasm API successfully.
+  Reproducible sample identities and limitations are in [ARM64.md](ARM64.md).
+- The x64 0.1.12 build reloaded in the original four Explorer processes. Independent
+  public-API transfers immediately before/after the update matched all sixteen
+  records exactly and erased disposable test copies. The installed source matched
+  the maintained source. No Explorer restart was performed.
+
+## Historical first AI review: changes and boundaries
 
 - Removed permanent DLL pinning. Synchronized initial UI publication with unload,
   tracked active UI callbacks, and moved teardown to posted owner-thread work.
@@ -74,8 +96,8 @@ For 0.1.10, the user confirmed that the saved icons restored automatically, both
 remain visible together, and the inner icons' app context menus work. Runtime
 logs independently show real 40x40 native icon views with matching models and
 the outer window visible, plus recognized native menu hold and release.
-Local official validation has one expected amd64 manual-confirmation warning and
-zero unexpected warnings.
+For 0.1.11, local official validation had one expected amd64 manual-confirmation
+warning and zero unexpected warnings.
 
 The 0.1.11 final source was installed and reloaded in the same four Explorer
 processes. Independent public-API transfers immediately before and after the
@@ -91,8 +113,8 @@ the inner icons' app context menus still work.
 Only Windows 11 23H2 22631.5126 x64 / Windhawk 1.7.3 has runtime evidence.
 24H2/25H2, ARM64, full input/drag-cancel, DPI/multiple-monitor and light/high-contrast
 coverage remain unverified. Some custom menus do not expose recognized foreground
-menu state. The unchanged amd64 warning requires a human decision; it is not
-resolved by switching architecture metadata.
+menu state. The 0.1.12 architecture metadata change follows an actual ARM64 implementation,
+not just a warning suppression. ARM64 remains limited to static/compile evidence.
 
 The first submission head 0c16f58e passed the 1.6.1, 1.7.3 and 2.0.0-alpha.7 build
 jobs. The updated head must run its own CI and AI review before human review.

@@ -1,8 +1,27 @@
 # Review and verification
 
-Experimental version 0.1.12, reviewed on 2026-10-27. This is development evidence,
+Experimental version 0.1.13, reviewed on 2026-10-27. This is development evidence,
 not official Windhawk approval. The submission is
 [windhawk-mods #6645](https://github.com/ramensoftware/windhawk-mods/pull/6645).
+
+## Fourth review: decoder hardening in 0.1.13
+
+The review of 403deec4 found no blockers and accepted both maintainer requests,
+including the ARM64 implementation. A functionality note nevertheless exposed a
+real conservative-decoding gap: an ignored instruction could change a second,
+implicit or write-back register while retaining a stale tracked alias. New
+regression fixtures reproduced an accepted but incorrect offset in 0.1.12.
+
+The fallback now rejects unmodelled instructions outright. Non-stack write-back,
+pair loads, xchg, mul and string operations are rejected; known SP-relative save
+stores remain supported. STP saves registers rather than overwriting both inputs,
+so rejecting every STP would break the inspected ARM64 prologues. Assigning an
+identity alias to SP is rejected, and pointer-authentication instructions explicitly
+invalidate LR tracking. The new negative cases and real ARM64/x64 API probes pass.
+The 0.1.13 x64 build also reloaded in the original four Explorer processes;
+public-API exports immediately before and after the update matched all sixteen
+records exactly. No Explorer restart was performed. This is a decoder protection
+change; drawer interaction and collection format are unchanged. ARM64 physical UI acceptance is still not claimed.
 
 ## Maintainer feedback and 0.1.12
 

@@ -152,6 +152,40 @@ int main() {
     getter = {"pacibsp", "mov x19, x0", "mov x0, x1", "add x1, x19, #0x50", "bl 0x3000"};
     Fixture(aQuery, getter, aCopy);
     CHECK(Decode(IdentityMachine::Arm64, adjustment, offset) && offset == 80);
+    // Unmodelled effects must not leave a source/output alias at a stale offset.
+    // Each instruction precedes an otherwise consistent three-field copy.
+    for (auto const& hiddenWrite :
+         Code{"ldr x9, [x1, #0x10]!", "ldr x9, [x1], #0x10", "ldp x9, x1, [sp, #0x10]",
+              "ldp x9, x0, [sp, #0x10]", "stp x9, x10, [x1, #0x10]!"}) {
+        auto copy = aCopy;
+        copy.insert(copy.begin(), hiddenWrite);
+        Fixture(aQuery, getter, copy);
+        CHECK(!Decode(IdentityMachine::Arm64, adjustment, offset));
+    }
+    for (auto const& hiddenWrite :
+         Code{"xchg r8, rdx", "mul r8", "rep movsq", "movsq", "cmpxchg qword ptr [r8], r9"}) {
+        auto copy = xCopy;
+        copy.insert(copy.begin(), hiddenWrite);
+        Fixture(xQuery, xGetter, copy);
+        CHECK(!Decode(IdentityMachine::X64, adjustment, offset));
+    }
+    auto stackCopy = aCopy;
+    stackCopy.insert(stackCopy.begin(), {"stp x19, x20, [sp, #-0x20]!", "str x21, [sp, #-0x10]!"});
+    Fixture(aQuery, getter, stackCopy);
+    CHECK(Decode(IdentityMachine::Arm64, adjustment, offset) && offset == 80);
+    auto stackAlias = aCopy;
+    stackAlias.insert(stackAlias.begin(), "mov sp, x1");
+    Fixture(aQuery, getter, stackAlias);
+    CHECK(!Decode(IdentityMachine::Arm64, adjustment, offset));
+    auto authenticatedAlias = aCopy;
+    for (auto& instruction : authenticatedAlias) {
+        auto position = instruction.find("[x1");
+        if (position != std::string::npos)
+            instruction.replace(position, 3, "[x30");
+    }
+    authenticatedAlias.insert(authenticatedAlias.begin(), "mov x30, x1");
+    Fixture(aQuery, getter, authenticatedAlias);
+    CHECK(!Decode(IdentityMachine::Arm64, adjustment, offset));
     getter = aGetter;
     getter[3] = "ldr x8, [x0, #0x7fffffffffffffff]";
     Fixture(aQuery, getter, aCopy);

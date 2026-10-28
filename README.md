@@ -91,7 +91,7 @@ Normal same-ID updates retain records without this tool.
 
 ## Source and review
 
-Version 0.1.12 is experimental and is not yet in the official catalog.
+Version 0.1.13 is experimental and is not yet in the official catalog.
 Official submission: [windhawk-mods #6645](https://github.com/ramensoftware/windhawk-mods/pull/6645).
 To try the local source, create a new mod in Windhawk and replace the starter
 with [nested-tray-drawer.wh.cpp](nested-tray-drawer.wh.cpp), then compile it.

@@ -1,6 +1,6 @@
 # Identity decoding and ARM64 evidence
 
-Version 0.1.12 replaces fixed x64 byte patterns with Windhawk's public
+Since version 0.1.12, the mod replaces fixed x64 byte patterns with Windhawk's public
 `Wh_Disasm` API. The scan follows the approach used in m417z's
 [Taskbar height and icon size](https://github.com/ramensoftware/windhawk-mods/blob/main/mods/taskbar-icon-size.wh.cpp).
 It is bounded and fails closed; it does not execute an arbitrary instruction stream.
@@ -11,7 +11,10 @@ aliases and constant additions in a small supported instruction set. It then
 requires source-to-destination copies of HWND (8 bytes), UID (4 bytes) and GUID
 (16 bytes) at consistent offsets. A getter can copy the fields inline or call
 the exact symbol-resolved constructor after that constructor's prefix is verified.
-Unknown operations invalidate tracked register values. Unrecognized branches,
+From 0.1.13, unmodelled operations are rejected outright, including pair loads,
+implicit-register instructions and non-stack write-back addressing. Recognized
+SP-relative save stores remain supported; identity aliases cannot be assigned
+to SP. Pointer authentication explicitly invalidates LR tracking. Unrecognized branches,
 32-bit pointer truncation, mismatched fields and call targets, malformed numbers,
 invalid instruction lengths and scan limits all reject the accessor.
 
